@@ -146,7 +146,8 @@
 \noindent
 Atomic commands (A) are those whose evaluation is to be interpreted
 as taking one atomic step.
-We have the following fragments
+We have the following fragments, but in contrast to SMT-LIB's \terminal{set-logic},
+we choose not to declare them upfront
 \begin{itemize}
 \item The base language (B) includes sequential composition,
       the annotation mechanism,
@@ -189,6 +190,68 @@ The command language for all fragments encompasses
 \item Analogously to SMT-LIB, the commands \terminal{get-proof}
       and \terminal{get-counterexample} produce evidence
       for the most-recent result of \terminal{verify-call}.
+\end{itemize}
+
+\section{Properties}
+
+\begin{align}
+& \terminal{:assert}
+    && \nonterminal{relational-term}
+    \tag{GB} \\
+& \terminal{:live}
+    \tag{FB} \\
+& \terminal{:non-live}
+    \tag{FB} \\[4pt]
+& \terminal{:requires}
+    && \nonterminal{term},
+    \tag{GP} \\
+& \terminal{:ensures}
+    && \nonterminal{reltional-term}
+    \tag{GP} \\
+& \terminal{:invariant}
+    && \nonterminal{relational-term}
+    \tag{GS} \\
+& \terminal{:decreases}
+    && \terminal{term}
+    \tag{FS} \\
+& \terminal{:decreases}
+    && \LP \terminal{term}\rplus \RP
+    \tag{FS$^+$} \\
+& \terminal{:modifies}
+    && \LP \nonterminal{symbol}\rplus \RP
+    \tag{GPS} \\[4pt]
+& \terminal{:ltl}
+    && \nonterminal{ltl-formula}
+    \tag{LTL}
+\end{align}
+
+Properties are specified as annotations with the help of attributes.
+\begin{itemize}
+\item The syntactic form $\LP\terminal{old}~\nonterminal{symbol}\RP$,
+      part of $\nonterminal{relational-term}$,
+      may refer to the value of global variables
+      when the enclosing procedure context was entered.
+      Note, in contrast to some other specification languages,
+      there is no support $\LP\terminal{old}~\nonterminal{term}\RP$
+      for arbitrary terms and front-end tools must push down
+      the \terminal{old} to surround global variables only.
+\item There are three basic assertions (B), assertions represent safety invariants (G)
+      and live and non-live liveness properties (F),
+      where the abbreviations mirror the corresponding LTL operators.
+\item Procedure annotations (P) include pre-/postconditions.
+      Modifies clauses constraint which global variables may be modified.
+\item Loop annotations include invariants (for safety),
+      again modifies clauses,
+      and decreases clauses with a given variant as an integer-valued term,
+      with a possible extension for lexicographic orders
+      over a list of variants.
+\item Note, pre-/postconditions may make sense around arbitrary statements,
+      notably loops,
+      too, possibly with another syntactic form $\LP\terminal{final}~\nonterminal{symbol}\RP$,
+      with refers to any variable at the end of the block.
+\item Finally, we may wish to allow full LTL formulas
+      but this must probably be restricted to the body statement
+      of the procedure that is the entry point.
 \end{itemize}
 
 \section{Semantics}
