@@ -1,0 +1,113 @@
+\documentclass[runningheads]{llncs}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx} 
+\usepackage{listings}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{stmaryrd}
+\usepackage{mathtools}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+\usepackage{xspace}
+\usepackage{tabto}
+\usepackage{wrapfig}
+\usepackage{comment}
+
+\usepackage[colorlinks,allcolors=blue]{hyperref}
+\usepackage[capitalise]{cleveref}
+
+% Springer-compliant names
+\Crefname{equation}{Eq.}{Eqs.}
+\Crefname{figure}{Fig.}{Figs.}
+\Crefname{tabular}{Table}{Tabs.}
+\Crefname{example}{Ex.}{Exs.}
+\Crefname{section}{Sec.}{Sects.}
+\Crefname{corollary}{Cor.}{Cors.}
+\Crefname{proposition}{Prop.}{Props.}
+\Crefname{theorem}{Thm.}{Thms.}
+\Crefname{lemma}{Lem.}{Lems.}
+\Crefname{algorithm}{Alg.}{Algs.}
+\Crefname{definition}{Def.}{Defs.}
+
+\input{definitions}
+
+\author{
+    Gidon Ernst \inst{1}
+    \and
+    Alberto Griggio \inst{2}
+    \and
+    Martin Jonáš \inst{3}}
+
+\institute{
+    LMU Munich, Munich, Germany
+    \email{gidon.ernst@lmu.de}
+    \and
+    Fondazione Bruno Kesseler, Trento, Italy
+    \email{griggio@fbk.eu}
+    \and
+    Masaryk University, Brno, Czech Republic
+    \email{martin.jonas@mail.muni.cz}
+}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+\section{Syntax}
+
+\begin{align}
+\nonterminal{statement}
+    & \Coloneqq
+        \LP \terminal{block}
+            \nonterminal{statement} \rplus
+        \RP \notag \\[4pt]
+    & \alt
+        \LP \terminal{assume}~
+            \nonterminal{term}
+        \RP \tag{A} \\
+    & \alt
+        \LP \terminal{assign}~
+            \LP \LP \nonterminal{symbol}~\nonterminal{term} \RP\rplus \RP
+        \RP \tag{A} \\
+    & \alt
+        \LP \terminal{call}~\nonterminal{symbol}~
+            \LP \nonterminal{term}\rstar \RP~
+            \LP \nonterminal{symbol}\rstar \RP
+        \RP \tag{P} \\[4pt]
+    & \alt
+        \LP \terminal{label}~
+            \nonterminal{symbol}
+        \RP \tag{AU} \\
+    & \alt
+        \LP \terminal{goto}~
+            \nonterminal{symbol}
+        \RP \tag{AU} \\[4pt]
+    & \alt
+        \LP \terminal{if}~
+            \nonterminal{term}~
+            \nonterminal{statement}~
+            \nonterminal{statement}\ropt
+        \RP \tag{S} \\
+    & \alt
+        \LP \terminal{while}~
+            \nonterminal{term}~
+            \nonterminal{statement}
+        \RP \tag{S} \\[4pt]
+    & \alt
+        \LP \terminal{havoc}~
+            \LP \nonterminal{symbol}\rplus \RP
+        \RP \tag{AN} \\
+    & \alt
+        \LP \terminal{choice}~
+            \LP \nonterminal{statement}\rplus \RP
+        \RP \tag{SN}
+\end{align}
+
+\section{Semantics}
+
+\section{Tooling}
+
+\end{document}

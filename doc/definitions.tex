@@ -1,0 +1,45 @@
+\definecolor{darkgreen}{rgb}{0.0, 0.53, 0.0}
+\definecolor{darkblue}{rgb}{0.21,0.21,0.50}
+\definecolor{darkgrey}{rgb}{0.17,0.17,0.17}
+
+\newcommand{\code}[1]{\texttt{#1}}
+
+\def\p#1{\mathrel{\ooalign{\hfil$\mapstochar\mkern 5mu$\hfil\cr$#1$}}}
+\newcommand{\pto}{\p\to}
+
+\newcommand{\alt}{\kern5pt\mathrel{\mid}\kern5pt}
+
+\newcommand{\Bool}{\mathbb{B}}
+\newcommand{\Nat}{\mathbb{N}}
+\newcommand{\Int}{\mathbb{Z}}
+\newcommand{\Real}{\mathbb{R}}
+
+\newcommand{\Sort}[2]{#1\langle#2\rangle}
+
+\newcommand{\Seq}[1]{\mathit{Seq}\langle#1\rangle}
+\newcommand{\Set}[1]{\mathit{Set}\langle#1\rangle}
+\newcommand{\MultiSet}[1]{\mathit{MultiSet}\langle#1\rangle}
+
+\newcommand{\Map}[2]{\mathit{Map}\langle#1, #2\rangle}
+\newcommand{\Array}[2]{\mathit{Array}\langle#1, #2\rangle}
+
+\newcommand{\nonterminal}[1]{{\color{darkgreen} \langle \mathit{#1} \rangle}}
+\newcommand{\terminal}[1]{{\color{darkblue} \code{\bfseries #1}}}
+
+\newcommand{\repn}[1]{{\color{darkgrey}^{#1}}}
+\newcommand{\rplus}{{\color{darkgrey}^{+}}}
+\newcommand{\rstar}{{\color{darkgrey}^{*}}}
+\newcommand{\ropt}{{\color{darkgrey}^{?}}}
+\newcommand{\rmid}{\mathrel{\color{darkgrey}\mid}}
+
+\newcommand{\command}[1]{{\color{darkblue} \code{\bfseries #1}}}
+\newcommand{\identifier}[1]{{\color{lightblue} \code{#1}}}
+
+\newcommand{\sem}[1]{\llbracket #1 \rrbracket}
+
+\newcommand{\old}{\mathbf{old}}
+\newcommand{\free}{\mathrm{free}}
+
+\newcommand{\LP}{\terminal{(}}
+\newcommand{\RP}{\terminal{)}}
+
