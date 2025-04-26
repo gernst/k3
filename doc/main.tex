@@ -54,7 +54,15 @@
 
 \maketitle
 
+\begin{abstract}
+TODO
+
+\keywords{Intermediate verification language}
+\end{abstract}
+
 \section{Introduction}
+
+\clearpage
 
 \section{Syntax}
 
@@ -225,6 +233,7 @@ The command language for all fragments encompasses
     \tag{LTL}
 \end{align}
 
+\noindent
 Properties are specified as annotations with the help of attributes.
 \begin{itemize}
 \item The syntactic form $\LP\terminal{old}~\nonterminal{symbol}\RP$,
@@ -240,7 +249,7 @@ Properties are specified as annotations with the help of attributes.
       where the abbreviations mirror the corresponding LTL operators.
 \item Procedure annotations (P) include pre-/postconditions.
       Modifies clauses constraint which global variables may be modified.
-\item Loop annotations include invariants (for safety),
+\item Loop and label annotations include invariants (for safety),
       again modifies clauses,
       and decreases clauses with a given variant as an integer-valued term,
       with a possible extension for lexicographic orders
@@ -253,6 +262,45 @@ Properties are specified as annotations with the help of attributes.
       but this must probably be restricted to the body statement
       of the procedure that is the entry point.
 \end{itemize}
+
+\section{Proofs and Counterexamples}
+
+The requirement for proofs and counterexamples is so that
+they can be checked by generating verification conditions in SMT-LIB.
+
+For safety properties, a proof is given by safety annotations (G)
+for all recursive procedures, loops, as well as some labels so that each cycle is broken.
+
+For safety, a counterexample is given by a concrete execution trace
+that initializes global variables, denotes the parameters
+of the call to the entry procedure,
+and proceeds to resolve nondeterminism in the initialization of local variables,
+havoc statements, and choices.
+\begin{align*}
+& \LP \terminal{global}~ \nonterminal{symbol}~\nonterminal{value} \RP\rstar \\
+& \LP \terminal{call}~   \nonterminal{symbol}~\nonterminal{value}\star \RP \\
+& \LP \terminal{local}~ \nonterminal{value}\star \RP \\
+& \LP \terminal{havoc}~ \nonterminal{value}\star \RP \\
+& \LP \terminal{choice}~  k \RP \\
+\end{align*}
+
+For liveness, a proof is based on well-founded orders,
+possibly here decreases clauses (to be clarified).
+
+A counterexample is a lasso,
+which has a concrete trace as a stem (see above).
+From the entry point of the lasso,
+we require a \emph{symbolic} guidance that witnesses some path
+back to the entry point.
+It consists of a recurrent set, annotated as an invariant,
+to each loop head, including the entry point of the lasso.
+All other loop heads encountered must in addition be annotated
+by a decreases clause, to guarantee that the path is terminating.
+On the way, havocs should be annotated with terms
+(which include a choice function).
+For \terminal{choice}, we may also need to resolve it symbolically,
+perhaps by providing a guard attached to each possible substatement,
+which encodes the condition when that path should be taken.
 
 \section{Semantics}
 
