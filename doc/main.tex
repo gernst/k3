@@ -59,10 +59,38 @@
 \section{Syntax}
 
 \begin{align}
+\nonterminal{command}
+    & \Coloneqq
+        \LP \terminal{declare-var}~
+            \nonterminal{symbol}~\nonterminal{sort}
+        \RP \notag \\
+    & \alt
+        \LP \terminal{define-proc}~
+            \nonterminal{symbol}~
+            \LP \nonterminal{symbol}\rstar \RP~
+            \LP \nonterminal{symbol}\rstar \RP~
+            \LP \nonterminal{symbol}\rstar \RP
+        \RP \notag \\
+    & \alt
+        \LP
+        \terminal{annotate}~
+        \terminal{:tag}~\nonterminal{symbol}~
+        \nonterminal{attribute}\rplus
+        \RP \notag \\
+    & \alt
+        \LP
+        \terminal{verify}~
+        \nonterminal{symbol}
+        \RP \notag \\[4pt]
 \nonterminal{statement}
     & \Coloneqq
-        \LP \terminal{block}
+        \LP \terminal{sequence}~
             \nonterminal{statement} \rplus
+        \RP \notag \\
+    & \alt
+        \LP \terminal{!}~
+            \nonterminal{statement}~
+            \nonterminal{attribute}\rplus
         \RP \notag \\[4pt]
     & \alt
         \LP \terminal{assume}~
