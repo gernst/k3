@@ -59,52 +59,32 @@
 \section{Syntax}
 
 \begin{align}
-\nonterminal{command}
-    & \Coloneqq
-        \LP \terminal{declare-var}~
-            \nonterminal{symbol}~\nonterminal{sort}
-        \RP \notag \\
-    & \alt
-        \LP \terminal{define-proc}~
-            \nonterminal{symbol}~
-            \LP \nonterminal{symbol}\rstar \RP~
-            \LP \nonterminal{symbol}\rstar \RP~
-            \LP \nonterminal{symbol}\rstar \RP
-        \RP \notag \\
-    & \alt
-        \LP
-        \terminal{annotate}~
-        \terminal{:tag}~\nonterminal{symbol}~
-        \nonterminal{attribute}\rplus
-        \RP \notag \\
-    & \alt
-        \LP
-        \terminal{verify}~
-        \nonterminal{symbol}
-        \RP \notag \\[4pt]
 \nonterminal{statement}
     & \Coloneqq
         \LP \terminal{sequence}~
             \nonterminal{statement} \rplus
-        \RP \notag \\
+        \RP \tag{B} \\
     & \alt
         \LP \terminal{!}~
             \nonterminal{statement}~
             \nonterminal{attribute}\rplus
-        \RP \notag \\[4pt]
+        \RP \tag{B} \\[4pt]
     & \alt
         \LP \terminal{assume}~
             \nonterminal{term}
-        \RP \tag{A} \\
+        \RP \tag{AB} \\
     & \alt
         \LP \terminal{assign}~
             \LP \LP \nonterminal{symbol}~\nonterminal{term} \RP\rplus \RP
-        \RP \tag{A} \\
+        \RP \tag{AB} \\[4pt]
     & \alt
         \LP \terminal{call}~\nonterminal{symbol}~
             \LP \nonterminal{term}\rstar \RP~
             \LP \nonterminal{symbol}\rstar \RP
-        \RP \tag{P} \\[4pt]
+        \RP \tag{P} \\
+    & \alt
+        \LP \terminal{return} \RP
+       \tag{P$^+$} \\[4pt] 
     & \alt
         \LP \terminal{label}~
             \nonterminal{symbol}
@@ -123,7 +103,10 @@
         \LP \terminal{while}~
             \nonterminal{term}~
             \nonterminal{statement}
-        \RP \tag{S} \\[4pt]
+        \RP \tag{S} \\
+    & \alt
+        \LP \terminal{break} \RP \alt \LP \terminal{continue} \RP
+        \tag{S$^+$} \\[4pt]
     & \alt
         \LP \terminal{havoc}~
             \LP \nonterminal{symbol}\rplus \RP
@@ -131,8 +114,82 @@
     & \alt
         \LP \terminal{choice}~
             \LP \nonterminal{statement}\rplus \RP
-        \RP \tag{SN}
+        \RP \tag{SN} \\[8pt]
+%
+\nonterminal{command}
+    & \Coloneqq
+        \LP \terminal{declare-var}~
+            \nonterminal{symbol}~\nonterminal{sort}
+        \RP \notag \\
+    & \alt
+        \LP \terminal{define-proc}~
+            \nonterminal{symbol}~
+            \LP \LP \nonterminal{symbol}~\nonterminal{sort}\RP\rstar \RP \notag \\
+    & \hspace*{4.42cm} \LP \LP \nonterminal{symbol}~\nonterminal{sort}\RP\rstar \RP \notag \\
+    & \hspace*{4.42cm} \LP \LP \nonterminal{symbol}~\nonterminal{sort}\RP\rstar \RP
+        \notag \\
+    & \hspace*{3.0cm} \nonterminal{statement} \notag \RP \\
+    & \alt
+        \LP \terminal{annotate}~
+            \terminal{:tag}~\nonterminal{symbol}~
+            \nonterminal{attribute}\rplus
+        \RP \notag \\
+    & \alt
+        \LP \terminal{verify-call}~
+            \nonterminal{symbol}~
+            \LP \nonterminal{term}\rstar \RP
+        \RP \notag \\
+    & \alt
+        \LP \terminal{get-proof} \RP \alt \LP \terminal{get-counterexample} \RP \notag
 \end{align}
+
+\noindent
+Atomic commands (A) are those whose evaluation is to be interpreted
+as taking one atomic step.
+We have the following fragments
+\begin{itemize}
+\item The base language (B) includes sequential composition,
+      the annotation mechanism,
+      as well as two atomic commands for
+      parallel assignments and assumptions.
+\item The interprocedural fragment (P) includes procedure calls,
+      with a possible extension of return statements.
+\item The fragment with unstructured control flow (U)
+      contains labels and gotos.
+\item The fragment with structured control flow (S)
+      contains conditionals and while loops,
+      with a possible extentions of breaks and continue statements.
+\item The nondeterministic fragment (N)
+      includes atomic nondeterministic assignments,
+      as well as structured choice.
+\item The concurrent fragment (C) is yet to be defined
+      and left as an exercise to the reader, respectively,
+      for future work.
+\end{itemize}
+
+\noindent
+The command language for all fragments encompasses
+\begin{itemize}
+\item Declarations of global variables,
+      which are implicitly in scope in all subsequent procedure declarations.
+\item Named procedure declarations,
+      with lists of inputs, outputs, and local variables,
+      followed by a single body statement.
+\item The annotation command permits to link attributes
+      to statements with a given tag.
+\item The \terminal{verify-call} command takes a similar role as the \terminal{check-sat} command,
+      where the given symbol is a procedure name to enter,
+      and the list of terms for inputs,
+      which may refer to globally declared constants and functions,
+      and which may be constrained by prior \terminal{assert} commands.
+
+      The command returns either \terminal{correct} (all specified properties hold),
+      \terminal{incorrect} (at least one property is violated),
+      or \terminal{unkown} (inconclusive, e.g. due to timeout).
+\item Analogously to SMT-LIB, the commands \terminal{get-proof}
+      and \terminal{get-counterexample} produce evidence
+      for the most-recent result of \terminal{verify-call}.
+\end{itemize}
 
 \section{Semantics}
 
