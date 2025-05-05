@@ -1,9 +1,56 @@
 #!/usr/bin/env python3
 
+from dataclasses import dataclass
+
 import ply.lex as lex
 import ply.yacc as yacc
 
+
+class Token:
+    pass
+
+
+class Literal(Token):
+    pass
+
+
+@dataclass
+class Numeral(Literal):
+    value: str
+
+
+@dataclass
+class Decimal(Literal):
+    value: str
+
+
+@dataclass
+class Hexadecimal(Literal):
+    value: str
+
+
+@dataclass
+class Binary(Literal):
+    value: str
+
+
+@dataclass
+class String(Literal):
+    value: str
+
+
+@dataclass
+class Symbol(Token):
+    name: str
+
+
+@dataclass
+class Keyword(Token):
+    name: str
+
+
 tokens = (
+    "COMMENT",
     "LPAREN",
     "RPAREN",
     "NUMERAL",
@@ -16,6 +63,8 @@ tokens = (
     "QSYMBOL",
 )
 
+t_COMMENT = r";[^\n]+\n"
+
 t_LPAREN = r"\("
 t_RPAREN = r"\)"
 
@@ -26,26 +75,50 @@ t_BINARY = r"\#b[01]+"
 t_STRING = r"\".*\""
 
 t_KEYWORD = r":[a-zA-Z][a-zA-Z0-9]*"
-t_SYMBOL = r"([a-zA-Z~!@$%&*_+=<>.?/]|-|^])([a-zA-Z0-9~!@$%&*_+=<>.?/]|-|^])*"
+t_SYMBOL = r"([a-zA-Z~!@$%&*_+=<>.?/\^]|-)([a-zA-Z0-9~!@$%&*_+=<>.?/\^]|-)*"
 t_QSYMBOL = r"\|[^\|]*\|"
 
 t_ignore = " \t\n\r"
 
 
-def p_expr_constant(p):
-    """expr : NUMERAL
-    | DECIMAL
-    | HEXADECIMAL
-    | BINARY
-    | STRING"""
-    p[0] = p[1]
+def p_expr_numeral(p):
+    "expr : NUMERAL"
+    p[0] = Numeral(p[1])
+
+
+def p_expr_decimal(p):
+    "expr : DECIMAL"
+    p[0] = Decimal(p[1])
+
+
+def p_expr_hexadecimal(p):
+    "expr : HEXADECIMAL"
+    p[0] = Hexadecimal(p[1])
+
+
+def p_expr_binary(p):
+    "expr : BINARY"
+    p[0] = Binary(p[1])
+
+
+def p_expr_string(p):
+    "expr : STRING"
+    p[0] = String(p[1])
+
+
+def p_expr_keyword(p):
+    "expr : KEYWORD"
+    p[0] = Keyword(p[1][1:])
 
 
 def p_expr_symbol(p):
-    """expr : KEYWORD
-    | SYMBOL
-    | QSYMBOL"""
-    p[0] = p[1]
+    "expr : SYMBOL"
+    p[0] = Symbol(p[1])
+
+
+def p_expr_qsymbol(p):
+    "expr : QSYMBOL"
+    p[0] = Symbol(p[1][1:-1])
 
 
 def p_expr_compound(p):
@@ -61,6 +134,11 @@ def p_exprs_first(p):
 def p_exprs_more(p):
     "exprs : exprs expr"
     p[1].append(p[2])
+    p[0] = p[1]
+
+
+def p_exprs_comment(p):
+    "exprs : exprs COMMENT"
     p[0] = p[1]
 
 
