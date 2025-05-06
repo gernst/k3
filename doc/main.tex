@@ -305,9 +305,9 @@ and proceeds to resolve nondeterminism in the initialization of local variables,
 havoc statements, and choices.
 \begin{align*}
 & \LP \terminal{global}~ \nonterminal{symbol}~\nonterminal{value} \RP\rstar \\
-& \LP \terminal{call}~   \nonterminal{symbol}~\nonterminal{value}\star \RP \\
-& \LP \terminal{local}~ \nonterminal{value}\star \RP \\
-& \LP \terminal{havoc}~ \nonterminal{value}\star \RP \\
+& \LP \terminal{call}~   \nonterminal{symbol}~\nonterminal{value}\rstar \RP \\
+& \LP \terminal{local}~ \nonterminal{value}\rstar \RP \\
+& \LP \terminal{havoc}~ \nonterminal{value}\rstar \RP \\
 & \LP \terminal{choice}~  k \RP \\
 \end{align*}
 

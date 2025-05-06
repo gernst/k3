@@ -32,16 +32,3 @@ class Exists(Expression):
     binding: dict[str, Type]
     body: Expression
 
-
-class Statement:
-    pass
-
-
-@dataclass
-class Return(Statement):
-    pass
-
-
-@dataclass
-class Assume(Statement):
-    arg: Expression
