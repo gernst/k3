@@ -31,4 +31,3 @@ class Forall(Expression):
 class Exists(Expression):
     binding: dict[str, Type]
     body: Expression
-

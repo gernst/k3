@@ -13,6 +13,7 @@
 \usepackage{tabto}
 \usepackage{wrapfig}
 \usepackage{comment}
+\usepackage{todonotes}
 
 \usepackage[colorlinks,allcolors=blue]{hyperref}
 \usepackage[capitalise]{cleveref}
@@ -330,6 +331,25 @@ perhaps by providing a guard attached to each possible substatement,
 which encodes the condition when that path should be taken.
 
 \section{Semantics}
+
+We describe the semantics of the language in two ways
+\begin{itemize}
+\item A simple relational semantics, in which $\sem{\nonterminal{statement}}(\sigma,\hat\sigma')$ characterizes state transitions from ordinary initial states~$\sigma$
+to possible successor states~$\hat\sigma' = (\nonterminal{mode} \colon \sigma')$ which in 
+$\nonterminal{mode} \Coloneqq \terminal{ok} \mid \terminal{brk} \mid \terminal{cont} \mid \terminal{ret} \mid \dots$
+encodes varying control flow modes that include early loop exits etc.
+The relational semantics is adequate to describe safety properties (G)
+of sequential programs in the language.
+\item To deal with liveness (F) and, in the future, concurrency (C),
+we define a small-step semantics with steps $\kappa \xlongrightarrow{\nonterminal{event}} \hat\kappa'$,
+in which $\nonterminal{event}$ is an event that describes the transition.
+Notably, atomic statements, like \terminal{assume} and \terminal{assign}
+will have corresponding events attached.
+Here, configurations $\kappa \Coloneqq (\nonterminal{statement},\sigma)$
+and $\kappa' \Coloneqq (\nonterminal{statement},\nonterminal{mode},\sigma)$
+track some statement that is to be executed.
+    \todo{only works for the structured part!!}
+\end{itemize}
 
 \section{Tooling}
 
