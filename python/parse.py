@@ -100,7 +100,6 @@ class Parser:
         }
 
     def Minus(self, *args):
-        print(args)
         if len(args) == 1:
             return self.formula_manager.Minus(self.formula_manager.Int(0), args[0])
         else:
@@ -205,6 +204,8 @@ class Parser:
                 return [(name, None)] + self.attributes(next, *rest)
             case [Keyword(name), arg, *rest]:
                 return [(name, arg)] + self.attributes(*rest)
+            case _:
+                raise ValueError("Invalid attributes: " + str(stuff))
 
     def statement(self, scope, sexpr):
         match sexpr:
@@ -337,6 +338,21 @@ class Parser:
                 self.procedures[name] = proc_
 
                 return DeclareProc(proc_)
+
+            case (Symbol("annotate-tag"), tag, *stuff):
+                x = self.attributes(*stuff)
+                annotation = dict(x)
+                return AnnotateTag(tag, annotation)
+
+            case (Symbol("verify-call"), Symbol(name), inputs):
+                inputs_ = [self.term(self.globals, arg) for arg in inputs]
+                return VerifyCall(name, inputs_)
+
+            case (Symbol("get-proof"),):
+                return GetProof()
+
+            case (Symbol("get-counterexample"),):
+                return GetCounterexample()
 
             case _:
                 raise ValueError("Not a command: " + str(sexpr))

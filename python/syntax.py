@@ -92,3 +92,25 @@ class DeclareVar(Command):
 @dataclass
 class DeclareProc(Command):
     proc: Procedure
+
+
+@dataclass
+class AnnotateTag(Command):
+    tag: str
+    attributes: dict
+
+
+@dataclass
+class VerifyCall(Command):
+    name: str
+    inputs: list[object]
+
+
+@dataclass
+class GetProof(Command):
+    pass
+
+
+@dataclass
+class GetCounterexample(Command):
+    pass
