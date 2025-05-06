@@ -168,12 +168,22 @@ we choose not to declare them upfront
 \item The fragment with structured control flow (S)
       contains conditionals and while loops,
       with a possible extentions of breaks and continue statements.
+      It makes a lot of sense to mandate that whenever
+      we know a while loop resp. if statement is translated into labels and gotos,
+      then the loop should also have a \terminal{:named} annotation
+      that becomes the label of the loop head.
 \item The nondeterministic fragment (N)
       includes atomic nondeterministic assignments,
       as well as structured choice.
 \item The concurrent fragment (C) is yet to be defined
       and left as an exercise to the reader, respectively,
       for future work.
+\item It is debatable whether there should be a specification statement
+      which introduces a nondeterministic transition as a combination
+      of \terminal{havoc} and \terminal{assume}.
+      It possibly avoids introduction of additional local variables,
+      but introduces \terminal{old} into the expression language of programs,
+      which would otherwise only occur in specifications.
 \end{itemize}
 
 \noindent
@@ -210,8 +220,14 @@ The command language for all fragments encompasses
     \tag{FB} \\
 & \terminal{:non-live}
     \tag{FB} \\[4pt]
+& \terminal{:ghost}
+    && \LP \nonterminal{symbol}\rplus \RP
+    \tag{P} \\
+& \terminal{:ghost}
+    && \LP \nonterminal{term}\rplus \RP
+    \tag{P} \\
 & \terminal{:requires}
-    && \nonterminal{term},
+    && \nonterminal{term}
     \tag{GP} \\
 & \terminal{:ensures}
     && \nonterminal{reltional-term}
@@ -249,6 +265,10 @@ Properties are specified as annotations with the help of attributes.
       where the abbreviations mirror the corresponding LTL operators.
 \item Procedure annotations (P) include pre-/postconditions.
       Modifies clauses constraint which global variables may be modified.
+      Annotation \terminal{:ghost} introduces extra variables that are 
+      shared between the pre- and postcondition.
+      Its counterpart which takes terms as arguments is an annotation
+      for call-sites that helps to avoid to introduce existential quantifiers.
 \item Loop and label annotations include invariants (for safety),
       again modifies clauses,
       and decreases clauses with a given variant as an integer-valued term,
