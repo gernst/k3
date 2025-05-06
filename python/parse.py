@@ -51,7 +51,6 @@ class Parser:
             "ite": self.formula_manager.Ite,
             "distinct": self.formula_manager.AllDifferent,
             "to_real": self.formula_manager.ToReal,
-
             # Bitvectors
             "concat": self.formula_manager.BVConcat,
             "bvnot": self.formula_manager.BVNot,
@@ -82,7 +81,6 @@ class Parser:
             "bvsle": self.formula_manager.BVSLE,
             "bvsgt": self.formula_manager.BVSGT,
             "bvsge": self.formula_manager.BVSGE,
-
             # Strings
             "str.len": self.formula_manager.StrLength,
             "str.++": self.formula_manager.StrConcat,
@@ -96,12 +94,10 @@ class Parser:
             "str.to.int": self.formula_manager.StrToInt,
             "int.to.str": self.formula_manager.IntToStr,
             "bv2nat": self.formula_manager.BVToNatural,
-
             # Arrays
             "select": self.formula_manager.Select,
             "store": self.formula_manager.Store,
         }
-
 
     def Minus(self, *args):
         print(args)
@@ -199,11 +195,22 @@ class Parser:
             case _:
                 raise ValueError("Not an term: " + str(sexpr))
 
+    def attributes(self, *stuff):
+        match stuff:
+            case []:
+                return []
+            case [Keyword(name)]:
+                return [(name, None)]
+            case [Keyword(name), Keyword(_) as next, *rest]:
+                return [(name, None)] + self.attributes(next, *rest)
+            case [Keyword(name), arg, *rest]:
+                return [(name, arg)] + self.attributes(*rest)
+
     def statement(self, scope, sexpr):
         match sexpr:
-            case (Symbol("!"), body, *attributes):
+            case (Symbol("!"), body, *stuff):
                 body_ = self.statement(scope, body)
-                body_.attributes += attributes
+                body_.attributes |= dict(self.attributes(*stuff))
                 return body_
 
             case (Symbol("return"),):
