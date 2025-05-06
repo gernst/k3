@@ -1,0 +1,11 @@
+venv
+doc/*.aux
+doc/*.bbl
+doc/*.blg
+doc/*.fls
+doc/*.out
+doc/*.synctex*
+doc/*.log
+doc/*.fdb_latexmk
+doc/main.pdf
+**/__pycache__/
