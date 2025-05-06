@@ -138,12 +138,17 @@ TODO
         \notag \\
     & \hspace*{3.0cm} \nonterminal{statement} \notag \RP \\
     & \alt
-        \LP \terminal{annotate}~
-            \terminal{:tag}~\nonterminal{symbol}~
+        \LP \terminal{annotate-tag}~
+            \nonterminal{symbol}~
             \nonterminal{attribute}\rplus
         \RP \notag \\
     & \alt
         \LP \terminal{verify-call}~
+            \nonterminal{symbol}~
+            \LP \nonterminal{term}\rstar \RP
+        \RP \notag \\
+    & \alt
+        \LP \nonterminal{tool-specific}\terminal{-call}~
             \nonterminal{symbol}~
             \LP \nonterminal{term}\rstar \RP
         \RP \notag \\
@@ -209,6 +214,7 @@ The command language for all fragments encompasses
 \item Analogously to SMT-LIB, the commands \terminal{get-proof}
       and \terminal{get-counterexample} produce evidence
       for the most-recent result of \terminal{verify-call}.
+\item Extentsions on queries supported by tools may introduce additional commands.
 \end{itemize}
 
 \section{Properties}
