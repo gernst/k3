@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from dataclasses import dataclass
 
 import ply.lex as lex
@@ -7,6 +5,7 @@ import ply.yacc as yacc
 
 
 class Token:
+    # TODO: add file and line number information here
     pass
 
 
@@ -150,9 +149,6 @@ def p_error(p):
     print("Syntax error in input!")
 
 
-def lexer():
-    return lex.lex()
-
-
-def parser():
-    return yacc.yacc(start="exprs")
+def parse(text):
+    parser = yacc.yacc(start="exprs")
+    return parser.parse(text, lexer=lex.lex())
