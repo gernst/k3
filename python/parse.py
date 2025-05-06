@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+import fractions
 import pysmt
 
 from sexpr import *
@@ -20,6 +21,11 @@ class Parser:
 
         self.sorts = dict()
         self.globals = dict()
+
+        self.constants = set()
+        self.functions = dict()
+
+        self.procedures = dict()
 
     def type(self, sexpr):
         match sexpr:
@@ -73,15 +79,53 @@ class Parser:
             case Numeral(value):
                 return self.formula_manager.Int(int(value))
 
+            case Decimal(value):
+                return self.formula_manager.Real(fractions.Fraction(value))
+
             case Symbol("true"):
                 return self.formula_manager.TRUE()
+
+            case Symbol("false"):
+                return self.formula_manager.FALSE()
 
             case Symbol(name) if name in scope:
                 return scope[name]
 
+            case Symbol(name) if name in self.constants:
+                fun_ = self.functions[name]
+                return fun_
+
+            case (Symbol(name), args) if name in self.functions:
+                fun_ = self.functions[name]
+                args_ = [self.term(scope, arg) for arg in args]
+                return self.formula_manager.Function(fun_, args_)
+
+            case (Symbol("select"), base, index):
+                base_ = self.term(scope, base)
+                index_ = self.term(scope, index)
+                return self.formula_manager.Select(base_, index_)
+
+            case (Symbol("store"), base, index, value):
+                base_ = self.term(scope, base)
+                index_ = self.term(scope, index)
+                value_ = self.term(scope, value)
+                return self.formula_manager.Store(base_, index_, value_)
+
+            case (Symbol("forall"), vars, body):
+                vars_ = self.formals(vars)
+                scope_ = scope | dict(vars_)
+                body_ = self.term(scope_, body)
+                return self.formula_manager.ForAll(vars_, body_)
+
+            case (Symbol("exists"), vars, body):
+                vars_ = self.formals(vars)
+                scope_ = scope | dict(vars_)
+                body_ = self.term(scope_, body)
+                return self.formula_manager.Exists(vars_, body_)
+
             case _:
                 raise ValueError("Not an term: " + str(sexpr))
-    
+
     def statement(self, scope, sexpr):
         match sexpr:
             case (Symbol("!"), body, *attributes):
@@ -103,11 +147,11 @@ class Parser:
                 return Assume(arg_)
 
             case (Symbol("assign"), pairs):
-                pairs_ = [ self.assign(scope, sym.name, rhs) for sym, rhs in pairs ]
+                pairs_ = [self.assign(scope, sym.name, rhs) for sym, rhs in pairs]
                 return Assign(pairs_)
 
             case (Symbol("havoc"), vars):
-                vars_ = [ scope[sym.name] for sym in vars ]
+                vars_ = [scope[sym.name] for sym in vars]
                 return Havoc(vars_)
 
             case (Symbol("label"), Symbol(name)):
@@ -115,6 +159,11 @@ class Parser:
 
             case (Symbol("goto"), Symbol(name)):
                 return Goto(name)
+
+            case (Symbol("call"), Symbol(name), inputs, outputs):
+                inputs_ = [self.term(scope, input) for input in inputs]
+                outputs_ = [scope[sym.name] for sym in outputs]
+                return Call(name, inputs_, outputs_)
 
             case (Symbol("if"), condition, iftrue):
                 condition_ = self.formula(scope, condition)
@@ -155,9 +204,28 @@ class Parser:
                 self.sorts[name] = decl_
                 return pysmt.smtlib.script.SmtLibCommand("declare-sort", [decl_])
 
-            case (Symbol("assert"), expr):
-                expr_ = self.formula({}, expr)
-                print(expr_)
+            case (Symbol("declare-const"), Symbol(name), sort):
+                assert name not in self.functions
+                sort_ = self.type(sort)
+                fun_ = self.formula_manager.Symbol(name, sort_)
+                self.constants |= name
+                self.functions[name] = fun_
+                return pysmt.smtlib.script.SmtLibCommand("declare-const", [fun_])
+
+            case (Symbol("declare-fun"), Symbol(name), args, sort):
+                assert name not in self.functions
+                args_ = [self.type(arg) for arg in args]
+                sort_ = self.type(sort)
+                if args_:
+                    type_ = self.type_manager.FunctionType(sort_, args_)
+                    fun_ = self.formula_manager.Symbol(name, type_)
+                    self.functions[name] = fun_
+                else:
+                    fun_ = self.formula_manager.Symbol(name, sort_)
+                    self.constants |= name
+                    self.functions[name] = fun_  # keep this!
+
+                return pysmt.smtlib.script.SmtLibCommand("declare-fun", [fun_])
 
             case (Symbol("declare-var"), Symbol(name), sort):
                 assert name not in self.globals
@@ -166,7 +234,13 @@ class Parser:
                 self.globals[name] = var_
                 return DeclareVar(var_)
 
+            case (Symbol("assert"), expr):
+                expr_ = self.formula({}, expr)
+                return pysmt.smtlib.script.SmtLibCommand("assert", [expr_])
+
             case (Symbol("define-proc"), Symbol(name), inputs, outputs, locals, body):
+                assert name not in self.procedures
+
                 formals = inputs + outputs + locals
                 names_ = [sym.name for sym, sort in formals]
                 assert len(names_) == len(set(names_))
@@ -180,6 +254,8 @@ class Parser:
                 body_ = self.statement(scope_, body)
 
                 proc_ = Procedure(name, inputs_, outputs_, locals_, body_)
+                self.procedures[name] = proc_
+
                 return DeclareProc(proc_)
 
             case _:

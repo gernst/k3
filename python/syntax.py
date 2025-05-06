@@ -42,6 +42,13 @@ class Goto(Statement):
 
 
 @dataclass
+class Call(Statement):
+    name: str
+    inputs: list[object]
+    outputs: list[object]
+
+
+@dataclass
 class If(Statement):
     condition: object
     iftrue: Statement
