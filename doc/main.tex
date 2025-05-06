@@ -307,9 +307,11 @@ havoc statements, and choices.
 \begin{align*}
 & \LP \terminal{global}~ \nonterminal{symbol}~\nonterminal{value} \RP\rstar \\
 & \LP \terminal{call}~   \nonterminal{symbol}~\nonterminal{value}\rstar \RP \\
-& \LP \terminal{local}~ \nonterminal{value}\rstar \RP \\
-& \LP \terminal{havoc}~ \nonterminal{value}\rstar \RP \\
+& \LP \terminal{local}~  \nonterminal{value}\rstar \RP \\
+& \LP \terminal{havoc}~  \nonterminal{value}\rstar \RP \\
 & \LP \terminal{choice}~  k \RP \\
+& \LP \terminal{if}~     \nonterminal{value}\rstar \RP \\
+& \LP \terminal{while}~  \nonterminal{value}\rstar \RP \\
 \end{align*}
 
 For liveness, a proof is based on well-founded orders,
@@ -326,9 +328,14 @@ All other loop heads encountered must in addition be annotated
 by a decreases clause, to guarantee that the path is terminating.
 On the way, havocs should be annotated with terms
 (which include a choice function).
+
 For \terminal{choice}, we may also need to resolve it symbolically,
 perhaps by providing a guard attached to each possible substatement,
 which encodes the condition when that path should be taken.
+
+Moreover, it seems very beneficial to include branching information,
+so that a validator does not need to fully evaluate guard expressions,
+which may be tricky if they contain non-executable stuff, such as quantifiers.
 
 \section{Semantics}
 
