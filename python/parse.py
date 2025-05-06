@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 import fractions
+import functools
 import pysmt
 
 from sexpr import *
@@ -26,6 +27,88 @@ class Parser:
         self.functions = dict()
 
         self.procedures = dict()
+
+        # adapted from pysmt.smtlib.parser.SmtLibParser
+        self.builtin = {
+            "true": self.environment.formula_manager.TRUE,
+            "false": self.environment.formula_manager.FALSE,
+            "+": self.formula_manager.Plus,
+            "-": self.Minus,
+            "*": self.formula_manager.Times,
+            "/": self.formula_manager.Div,
+            "pow": self.formula_manager.Pow,
+            ">": self.formula_manager.GT,
+            "<": self.formula_manager.LT,
+            ">=": self.formula_manager.GE,
+            "<=": self.formula_manager.LE,
+            "=": self.formula_manager.EqualsOrIff,
+            "not": self.formula_manager.Not,
+            "and": self.formula_manager.And,
+            "or": self.formula_manager.Or,
+            "xor": self.formula_manager.Xor,
+            "=>": self.formula_manager.Implies,
+            # '<->':self.formula_manager.Iff,
+            "ite": self.formula_manager.Ite,
+            "distinct": self.formula_manager.AllDifferent,
+            "to_real": self.formula_manager.ToReal,
+
+            # Bitvectors
+            "concat": self.formula_manager.BVConcat,
+            "bvnot": self.formula_manager.BVNot,
+            "bvand": self.formula_manager.BVAnd,
+            "bvor": self.formula_manager.BVOr,
+            "bvneg": self.formula_manager.BVNeg,
+            "bvadd": self.formula_manager.BVAdd,
+            "bvmul": self.formula_manager.BVMul,
+            "bvudiv": self.formula_manager.BVUDiv,
+            "bvurem": self.formula_manager.BVURem,
+            "bvshl": self.formula_manager.BVLShl,
+            "bvlshr": self.formula_manager.BVLShr,
+            "bvsub": self.formula_manager.BVSub,
+            "bvult": self.formula_manager.BVULT,
+            "bvxor": self.formula_manager.BVXor,
+            "bvnand": self.formula_manager.BVNand,
+            "bvnor": self.formula_manager.BVNor,
+            "bvxnor": self.formula_manager.BVXnor,
+            "bvcomp": self.formula_manager.BVComp,
+            "bvsdiv": self.formula_manager.BVSDiv,
+            "bvsrem": self.formula_manager.BVSRem,
+            "bvsmod": self.formula_manager.BVSMod,
+            "bvashr": self.formula_manager.BVAShr,
+            "bvule": self.formula_manager.BVULE,
+            "bvugt": self.formula_manager.BVUGT,
+            "bvuge": self.formula_manager.BVUGE,
+            "bvslt": self.formula_manager.BVSLT,
+            "bvsle": self.formula_manager.BVSLE,
+            "bvsgt": self.formula_manager.BVSGT,
+            "bvsge": self.formula_manager.BVSGE,
+
+            # Strings
+            "str.len": self.formula_manager.StrLength,
+            "str.++": self.formula_manager.StrConcat,
+            "str.at": self.formula_manager.StrCharAt,
+            "str.contains": self.formula_manager.StrContains,
+            "str.indexof": self.formula_manager.StrIndexOf,
+            "str.replace": self.formula_manager.StrReplace,
+            "str.substr": self.formula_manager.StrSubstr,
+            "str.prefixof": self.formula_manager.StrPrefixOf,
+            "str.suffixof": self.formula_manager.StrSuffixOf,
+            "str.to.int": self.formula_manager.StrToInt,
+            "int.to.str": self.formula_manager.IntToStr,
+            "bv2nat": self.formula_manager.BVToNatural,
+
+            # Arrays
+            "select": self.formula_manager.Select,
+            "store": self.formula_manager.Store,
+        }
+
+
+    def Minus(self, *args):
+        print(args)
+        if len(args) == 1:
+            return self.formula_manager.Minus(self.formula_manager.Int(0), args[0])
+        else:
+            return functools.reduce(self.formula_manager.Minus, args)
 
     def type(self, sexpr):
         match sexpr:
@@ -82,12 +165,6 @@ class Parser:
             case Decimal(value):
                 return self.formula_manager.Real(fractions.Fraction(value))
 
-            case Symbol("true"):
-                return self.formula_manager.TRUE()
-
-            case Symbol("false"):
-                return self.formula_manager.FALSE()
-
             case Symbol(name) if name in scope:
                 return scope[name]
 
@@ -95,21 +172,17 @@ class Parser:
                 fun_ = self.functions[name]
                 return fun_
 
-            case (Symbol(name), args) if name in self.functions:
+            case (Symbol(name), *args) if name in self.functions:
                 fun_ = self.functions[name]
                 args_ = [self.term(scope, arg) for arg in args]
                 return self.formula_manager.Function(fun_, args_)
 
-            case (Symbol("select"), base, index):
-                base_ = self.term(scope, base)
-                index_ = self.term(scope, index)
-                return self.formula_manager.Select(base_, index_)
+            case Symbol(name) if name in self.builtin:
+                return self.builtin[name]()
 
-            case (Symbol("store"), base, index, value):
-                base_ = self.term(scope, base)
-                index_ = self.term(scope, index)
-                value_ = self.term(scope, value)
-                return self.formula_manager.Store(base_, index_, value_)
+            case (Symbol(name), *args) if name in self.builtin:
+                args_ = [self.term(scope, arg) for arg in args]
+                return self.builtin[name](*args_)
 
             case (Symbol("forall"), vars, body):
                 vars_ = self.formals(vars)
