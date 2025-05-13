@@ -5,6 +5,7 @@ import functools
 import pysmt
 import pysmt.environment
 import pysmt.smtlib.script
+import pysmt.operators
 
 from .sexpr import *
 from .syntax import *
@@ -38,7 +39,9 @@ class Parser:
             "+": self.formula_manager.Plus,
             "-": self.Minus,
             "*": self.formula_manager.Times,
-            "/": self.formula_manager.Div,
+            # "/": self.formula_manager.Div, # wrong spelling!!
+            "div": self.formula_manager.Div,
+            # "mod": lambda left, right: self.formula_manager.create_node(node_type=pysmt.operators.MODULUS, args=(left, right)),
             "pow": self.formula_manager.Pow,
             ">": self.formula_manager.GT,
             "<": self.formula_manager.LT,
@@ -130,11 +133,19 @@ class Parser:
                 ran_ = type(ran)
                 return self.type_manager.ArrayType(dom_, ran_)
 
+            case Symbol(name):
+                assert name in self.sorts
+                decl_ = self.sorts[name]
+                return self.type_manager.get_type_instance(decl_)
+
             case (Symbol(name), *args):
                 assert name in self.sorts
                 args_ = [self.type(arg) for arg in args]
                 decl_ = self.sorts[name]
                 return self.type_manager.get_type_instance(decl_, *args_)
+
+            case _:
+                raise ValueError("Not a type: " + str(sexpr))
 
     def formal(self, name, sort):
         sort_ = self.type(sort)
@@ -195,7 +206,7 @@ class Parser:
                 return self.formula_manager.Exists(vars_, body_)
 
             case _:
-                raise ValueError("Not an term: " + str(sexpr))
+                raise ValueError("Not a term: " + str(sexpr))
 
     def attributes(self, *stuff):
         match stuff:
@@ -254,7 +265,7 @@ class Parser:
             case (Symbol("if"), condition, iftrue):
                 condition_ = self.formula(scope, condition)
                 iftrue_ = self.statement(scope, iftrue)
-                return If(condition_, iftrue_)
+                return If(condition_, iftrue_, Skip())
 
             case (Symbol("if"), condition, iftrue, iffalse):
                 condition_ = self.formula(scope, condition)
@@ -281,7 +292,7 @@ class Parser:
 
             case (Symbol("assert"), condition):
                 # condition_ = self.formula(scope, condition)
-                statement_ = Sequence()
+                statement_ = Skip()
                 statement_.attributes["assert"] = condition
                 return statement_
 
@@ -299,10 +310,23 @@ class Parser:
             case _:
                 raise ValueError("Not a type declaration: " + str(decl))
 
-    def declare_fun(self, decl):
+    def declare_fun(self, *decl):
         match decl:
             case (Symbol(name), args, sort):
-                pass
+                assert name not in self.functions
+                args_ = [self.type(arg) for arg in args]
+                sort_ = self.type(sort)
+
+                if args_:
+                    type_ = self.type_manager.FunctionType(sort_, args_)
+                    fun_ = self.formula_manager.Symbol(name, type_)
+                    self.functions[name] = fun_
+                else:
+                    fun_ = self.formula_manager.Symbol(name, sort_)
+                    self.constants |= name
+                    self.functions[name] = fun_  # keep this!
+
+                return fun_
 
             case _:
                 raise ValueError("Not a function declaration: " + str(decl))
@@ -315,34 +339,16 @@ class Parser:
 
             case (Symbol("declare-datatypes"), decls, datatypes):
                 # PySMT does not have data types, emulate with sort declarations and uninterpreted functions
-                decls_ = [self.declare_sort(decl) for decl in decls]                    
+                decls_ = [self.declare_sort(decl) for decl in decls]    
+                raise ValueError("Data type declarations currently unsupported: " + str(decls))                
 
-                print(decls_)
-                print(datatypes)
-                pass
+            case (Symbol("declare-const"), sym, sort):
+                decl_ = self.declare_fun(sym, [], sort)
+                return pysmt.smtlib.script.SmtLibCommand("declare-const", [decl_])
 
-            case (Symbol("declare-const"), Symbol(name), sort):
-                assert name not in self.functions
-                sort_ = self.type(sort)
-                fun_ = self.formula_manager.Symbol(name, sort_)
-                self.constants |= name
-                self.functions[name] = fun_
-                return pysmt.smtlib.script.SmtLibCommand("declare-const", [fun_])
-
-            case (Symbol("declare-fun"), Symbol(name), args, sort):
-                assert name not in self.functions
-                args_ = [self.type(arg) for arg in args]
-                sort_ = self.type(sort)
-                if args_:
-                    type_ = self.type_manager.FunctionType(sort_, args_)
-                    fun_ = self.formula_manager.Symbol(name, type_)
-                    self.functions[name] = fun_
-                else:
-                    fun_ = self.formula_manager.Symbol(name, sort_)
-                    self.constants |= name
-                    self.functions[name] = fun_  # keep this!
-
-                return pysmt.smtlib.script.SmtLibCommand("declare-fun", [fun_])
+            case (Symbol("declare-fun"), sym, args, sort):
+                decl_ = self.declare_fun(sym, args, sort)
+                return pysmt.smtlib.script.SmtLibCommand("declare-fun", [decl_])
 
             case (Symbol("declare-var"), Symbol(name), sort):
                 assert name not in self.globals

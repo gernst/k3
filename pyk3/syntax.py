@@ -4,7 +4,6 @@ from dataclasses import dataclass
 class Statement:
     # keywords are stored without leading :
     attributes = dict()
-    pass
 
 
 @dataclass
@@ -30,6 +29,11 @@ class Assume(Statement):
 @dataclass
 class Assign(Statement):
     pairs: list[tuple[object, object]]
+
+
+@dataclass
+class Havoc(Statement):
+    vars: list[object]
 
 
 @dataclass
@@ -60,6 +64,10 @@ class If(Statement):
 class While(Statement):
     condition: object
     body: Statement
+
+
+def Skip():
+    return Sequence([])
 
 
 @dataclass

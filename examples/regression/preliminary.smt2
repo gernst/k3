@@ -1,32 +1,26 @@
 (declare-sort Foo 1)
 (declare-var x (Foo Int))
 
-(declare-datatypes ((|c#void| 0)) (((|c#void|))))
-
 (declare-fun foo (Int) Int)
 (declare-fun bar (Int Int) Int)
-
-(define-fun some_invariant ((out Int)) Bool
-    (> out 0))
-
 
 (define-proc inc-spec
     ((in  Int))
     ((out Int))
     ()
     (!
-        (assume (= out (+ in 1))
+        (assume (= out (+ in 1)))
         :tag inc-spec
         :requires (> out 0)
-        :ensures false)))
+        :ensures false))
 
 (define-proc inc
     ((in  Int))
     ((out Int))
     ()
     (!
-        (assign ((out (+ in 1)))
-        :tag inc)))
+        (assign ((out (+ in 1))))
+        :tag inc))
 
 (annotate-tag inc
     :requires true)
