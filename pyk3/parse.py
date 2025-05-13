@@ -211,7 +211,9 @@ class Parser:
         match sexpr:
             case (Symbol("!"), body, *stuff):
                 body_ = self.statement(scope, body)
-                body_.attributes |= dict(self.attributes(*stuff))
+                stuff_ = dict(self.attributes(*stuff))
+                assert set(body_.attributes.keys) & set(stuff_.keys()) == {}, "dict is not the correct representation, as attribute keywords can re-occur!"
+                body_.attributes |= stuff_
                 return body_
 
             case (Symbol("return"),):
