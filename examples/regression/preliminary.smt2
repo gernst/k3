@@ -9,18 +9,29 @@
 (define-fun some_invariant ((out Int)) Bool
     (> out 0))
 
+
+(define-proc inc-spec
+    ((in  Int))
+    ((out Int))
+    ()
+    (!
+        (assume (= out (+ in 1))
+        :tag inc-spec
+        :requires (> out 0)
+        :ensures false)))
+
 (define-proc inc
     ((in  Int))
     ((out Int))
     ()
     (!
         (assign ((out (+ in 1)))
-        :tag inc-tag)))
+        :tag inc)))
 
-(annotate-tag inc-tag
+(annotate-tag inc
     :requires true)
 
-(annotate-tag inc-tag
+(annotate-tag inc
     :ensures (> out in))
 
 (define-proc test

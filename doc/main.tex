@@ -329,6 +329,8 @@ can be followed syntactically, in which case we can also validate the counterexa
 by \emph{concolic} execution, so that the SMT solver does not necessarily need to rely on the given model at all but will reconstruct (some) that makes the trace feasible.
 However, one of the two is strictly required.
 
+Question: do we want the trace to end with some concrete indication which property was violated? For example an assert with multiple conjuncts, or a procedure with multiple postconditions?
+
 For liveness, a proof is based on well-founded orders,
 possibly here decreases clauses (to be clarified).
 
