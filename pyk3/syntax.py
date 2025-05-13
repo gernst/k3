@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 
 class Statement:
+    # keywords are stored without leading :
     attributes = dict()
     pass
 

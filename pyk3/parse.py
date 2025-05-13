@@ -279,16 +279,47 @@ class Parser:
                 ]
                 return Choice(statements_)
 
+            case (Symbol("assert"), condition):
+                # condition_ = self.formula(scope, condition)
+                statement_ = Sequence()
+                statement_.attributes["assert"] = condition
+                return statement_
+
             case _:
                 raise ValueError("Not a statement: " + str(sexpr))
 
-    def command(self, sexpr):
-        match sexpr:
-            case (Symbol("declare-sort"), Symbol(name), Numeral(arity)):
+    def declare_sort(self, decl):
+        match decl:
+            case (Symbol(name), Numeral(arity)):
                 assert name not in self.sorts
                 decl_ = self.type_manager.Type(name, int(arity))
                 self.sorts[name] = decl_
+                return decl_
+
+            case _:
+                raise ValueError("Not a type declaration: " + str(decl))
+
+    def declare_fun(self, decl):
+        match decl:
+            case (Symbol(name), args, sort):
+                pass
+
+            case _:
+                raise ValueError("Not a function declaration: " + str(decl))
+
+    def command(self, sexpr):
+        match sexpr:
+            case (Symbol("declare-sort"), *decl):
+                decl_ = self.declare_sort(decl)
                 return pysmt.smtlib.script.SmtLibCommand("declare-sort", [decl_])
+
+            case (Symbol("declare-datatypes"), decls, datatypes):
+                # PySMT does not have data types, emulate with sort declarations and uninterpreted functions
+                decls_ = [self.declare_sort(decl) for decl in decls]                    
+
+                print(decls_)
+                print(datatypes)
+                pass
 
             case (Symbol("declare-const"), Symbol(name), sort):
                 assert name not in self.functions

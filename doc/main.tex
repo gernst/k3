@@ -307,12 +307,14 @@ they can be checked by generating verification conditions in SMT-LIB.
 For safety properties, a proof is given by safety annotations (G)
 for all recursive procedures, loops, as well as some labels so that each cycle is broken.
 
-For safety, a counterexample is given by a concrete execution trace
+For safety, a counterexample is given by a model for the SMT-LIB
+definitions as well as a concrete execution trace
 that initializes global variables, denotes the parameters
 of the call to the entry procedure,
 and proceeds to resolve nondeterminism in the initialization of local variables,
 havoc statements, and choices.
 \begin{align*}
+& \LP \terminal{model}~  \nonterminal{model} \RP \\
 & \LP \terminal{global}~ \nonterminal{symbol}~\nonterminal{value} \RP\rstar \\
 & \LP \terminal{call}~   \nonterminal{symbol}~\nonterminal{value}\rstar \RP \\
 & \LP \terminal{local}~  \nonterminal{value}\rstar \RP \\
@@ -321,6 +323,10 @@ havoc statements, and choices.
 & \LP \terminal{if}~     \nonterminal{value} \RP \\
 & \LP \terminal{while}~  \nonterminal{value} \RP \\
 \end{align*}
+Note, given a model, we can resolve the latter two branchings by \emph{concrete} execution.
+However, if the branchings are included, the counterexample trace
+can be followed syntactically, in which case we can also validate the counterexample
+by \emph{concolic} execution, so that the SMT solver does not necessarily need to rely on the given model at all but will reconstruct (some) that makes the trace feasible.
 
 For liveness, a proof is based on well-founded orders,
 possibly here decreases clauses (to be clarified).
