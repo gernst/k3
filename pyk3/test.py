@@ -1,11 +1,19 @@
+#!/usr/bin/env pytest
+
 import sys
 
-import pysmt.smtlib.parser
-import sexpr
-import parse
+from .parse import parse
+import os
 
-with open("test.smt2") as file:
-    cmds = sexpr.parse(file.read())
-    cmds = parse.parse(cmds)
-    for cmd in cmds:
-        print(cmd)
+REGRESSION="../examples/regression/"
+
+def test_regressions():
+    for path in os.listdir(REGRESSION):
+        if path.endswith(".smt2"):
+            try_parse(REGRESSION + path)
+
+def try_parse(path):
+    with open(path) as file:
+        cmds = parse(file.read())
+        for cmd in cmds:
+            print(cmd)

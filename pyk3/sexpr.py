@@ -149,6 +149,6 @@ def p_error(p):
     print("Syntax error in input!")
 
 
-def parse(text):
+def read(text):
     parser = yacc.yacc(start="exprs")
     return parser.parse(text, lexer=lex.lex())

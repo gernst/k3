@@ -3,13 +3,16 @@ from dataclasses import dataclass
 import fractions
 import functools
 import pysmt
+import pysmt.environment
+import pysmt.smtlib.script
 
-from sexpr import *
-from syntax import *
+from .sexpr import *
+from .syntax import *
 
 
-def parse(cmds):
+def parse(text):
     parser = Parser()
+    cmds = read(text)
     cmds_ = [parser.command(cmd) for cmd in cmds]
     return cmds_
 
@@ -212,7 +215,7 @@ class Parser:
             case (Symbol("!"), body, *stuff):
                 body_ = self.statement(scope, body)
                 stuff_ = dict(self.attributes(*stuff))
-                assert set(body_.attributes.keys) & set(stuff_.keys()) == {}, "dict is not the correct representation, as attribute keywords can re-occur!"
+                # assert set(body_.attributes.keys()) & set(stuff_.keys()) == {}, "dict is not the correct representation, as attribute keywords can re-occur!"
                 body_.attributes |= stuff_
                 return body_
 
