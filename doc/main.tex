@@ -314,19 +314,20 @@ of the call to the entry procedure,
 and proceeds to resolve nondeterminism in the initialization of local variables,
 havoc statements, and choices.
 \begin{align*}
-& \LP \terminal{model}~  \nonterminal{model} \RP \\
+& \LP \terminal{model}~  \nonterminal{model} \RP\ropt \\
 & \LP \terminal{global}~ \nonterminal{symbol}~\nonterminal{value} \RP\rstar \\
 & \LP \terminal{call}~   \nonterminal{symbol}~\nonterminal{value}\rstar \RP \\
 & \LP \terminal{local}~  \nonterminal{value}\rstar \RP \\
 & \LP \terminal{havoc}~  \nonterminal{value}\rstar \RP \\
 & \LP \terminal{choice}~  k \RP \\
-& \LP \terminal{if}~     \nonterminal{value} \RP \\
-& \LP \terminal{while}~  \nonterminal{value} \RP \\
+& \LP \terminal{if}~     \nonterminal{value} \RP\ropt \\
+& \LP \terminal{while}~  \nonterminal{value} \RP\ropt \\
 \end{align*}
 Note, given a model, we can resolve the latter two branchings by \emph{concrete} execution.
 However, if the branchings are included, the counterexample trace
 can be followed syntactically, in which case we can also validate the counterexample
 by \emph{concolic} execution, so that the SMT solver does not necessarily need to rely on the given model at all but will reconstruct (some) that makes the trace feasible.
+However, one of the two is strictly required.
 
 For liveness, a proof is based on well-founded orders,
 possibly here decreases clauses (to be clarified).
