@@ -23,9 +23,11 @@ def find(path, result):
 def test_regression(path):
     try_parse(path)
 
+
 @pytest.mark.parametrize("path", find(SV_BENCHMARKS, []))
 def test_regression(path):
     try_parse(path)
+
 
 def try_parse(path):
     print(path)

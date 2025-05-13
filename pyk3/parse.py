@@ -339,8 +339,10 @@ class Parser:
 
             case (Symbol("declare-datatypes"), decls, datatypes):
                 # PySMT does not have data types, emulate with sort declarations and uninterpreted functions
-                decls_ = [self.declare_sort(decl) for decl in decls]    
-                raise ValueError("Data type declarations currently unsupported: " + str(decls))                
+                decls_ = [self.declare_sort(decl) for decl in decls]
+                raise ValueError(
+                    "Data type declarations currently unsupported: " + str(decls)
+                )
 
             case (Symbol("declare-const"), sym, sort):
                 decl_ = self.declare_fun(sym, [], sort)
