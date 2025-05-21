@@ -245,7 +245,7 @@ The command language for all fragments encompasses
     \tag{GB} \\
 & \terminal{:live}
     \tag{FB} \\
-& \terminal{:non-live}
+& \terminal{:not-live}
     \tag{FB} \\[4pt]
 & \terminal{:ghost}
     && \LP \nonterminal{symbol}\rplus \RP
@@ -288,7 +288,7 @@ Properties are specified as annotations with the help of attributes.
       for arbitrary terms and front-end tools must push down
       the \terminal{old} to surround global variables only.
 \item There are three basic assertions (B), assertions represent safety invariants (G)
-      and live and non-live liveness properties (F),
+      and live and not-live liveness properties (F),
       where the abbreviations mirror the corresponding LTL operators.
 \item Procedure annotations (P) include pre-/postconditions.
       Modifies clauses constraint which global variables may be modified.
@@ -377,7 +377,7 @@ are a subset of those that are attached to that tag.
 For liveness, a proof is based on well-founded orders,
 possibly here decreases clauses (to be clarified).
 Liveness proofs use exactly the same format as safety proofs,
-albeit their validation of course takes live and non-live locations into account
+albeit their validation of course takes live and not-live locations into account
 (see below).
 
 A counterexample is a lasso,
@@ -416,6 +416,29 @@ The main design goal of proof and counterexample formats is
 that they can be compiled together with the original program
 into an SMT-LIB file.
 
+\todo[inline]{
+    Interlude: The stuff below is almost right.
+    The trick is to proceed by defining predicate transformers to keep track of live and not-live locations encountered so far.}
+
+We define $[\alpha]^{L,N}~\phi$ to track a set~$L$ of live locations
+that are still \emph{expected to be encountered}, starting with~$L$
+as all live locations occurring inside the loop body,
+and~$N$ is the set of not-live locations that \emph{were actually encountered},
+starting with $N = \varnothing$.
+
+A liveness proof must then show that some measure~$\delta$
+decreases through the loop, but only if either~$L$ is not empty
+(a live location was missed),
+or~$N$ is not empty
+(a not-live location was hit),
+both of which should not happen infinitely often.
+
+The scheme must however be updated whenever we have groups of live and not-live locations,
+in particular when it is sufficient to visit \emph{one} location of a live group.
+This prompts a switch to compact VCs like in a collecting semantics.
+
+\todo[inline]{End interlude.}
+
 Validation relies on both standard over-approximate reasoning
 as well as underapproximate reasoning that denotes the existence of a path.
 We use notation from Dynamic Logic to represent these as follows:
@@ -427,7 +450,7 @@ We use notation from Dynamic Logic to represent these as follows:
 \nonterminal{property}
     & \Coloneqq \LP \terminal{assert}~ \nonterminal{symbol}~ \phi \RP \\
     & \alt      \LP \terminal{live}~ \nonterminal{symbol}\rplus \RP \\
-    & \alt      \LP \terminal{non-live}~ \nonterminal{symbol}\rplus \RP
+    & \alt      \LP \terminal{not-live}~ \nonterminal{symbol}\rplus \RP
 \end{align*}
 where the symbols in the properties point to tags
 and the semantics of modalities
