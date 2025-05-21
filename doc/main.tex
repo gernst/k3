@@ -18,13 +18,14 @@
 \usepackage[colorlinks,allcolors=blue]{hyperref}
 \usepackage[capitalise]{cleveref}
 
-\usepackage[paperwidth=155mm,
-            paperheight=235mm,
-            left=16mm,
-            right=16mm,
-            top=17mm,
-            bottom=25mm
-           ]{geometry}
+% want todonotes on margin
+% \usepackage[paperwidth=155mm,
+%             paperheight=235mm,
+%             left=16mm,
+%             right=16mm,
+%             top=17mm,
+%             bottom=25mm
+%            ]{geometry}
 
 % Springer-compliant names
 \Crefname{equation}{Eq.}{Eqs.}
@@ -42,11 +43,11 @@
 \input{definitions}
 
 \author{
-    Gidon Ernst \inst{1}
+    Gidon Ernst\inst{1}
     \and
-    Alberto Griggio \inst{2}
+    Alberto Griggio\inst{2}
     \and
-    Martin Jonáš \inst{3}}
+    Martin Jonáš\inst{3}}
 
 \institute{
     LMU Munich, Munich, Germany
@@ -152,6 +153,10 @@ TODO
             \nonterminal{attribute}\rplus
         \RP \notag \\
     & \alt
+        \LP \terminal{select-trace}~
+            \nonterminal{trace}
+        \RP \notag \\
+    & \alt
         \LP \terminal{verify-call}~
             \nonterminal{symbol}~
             \LP \nonterminal{term}\rstar \RP
@@ -211,6 +216,12 @@ The command language for all fragments encompasses
       followed by a single body statement.
 \item The annotation command permits to link attributes
       to statements with a given tag.
+\item The command \terminal{select-trace} specifies an execution trace
+      to the violation of a safety counterexample, respectively,
+      to the loop head of a lasso for counterexamples to liveness.
+      Maybe it is not entirely necessary to include this into the top-level commands,
+      however, it will be part of the responses by the solvers,
+      just like \terminal{annotate-tag}.
 \item The \terminal{verify-call} command takes a similar role as the \terminal{check-sat} command,
       where the given symbol is a procedure name to enter,
       and the list of terms for inputs,
@@ -301,107 +312,234 @@ Properties are specified as annotations with the help of attributes.
 
 \section{Proofs and Counterexamples}
 
+We outline the interaction between the commands and the solver.
+Just like in SMT-LIB \terminal{verify-call} command is responded
+to by one of the following status flags:
+\terminal{correct}, \terminal{incorrect}, and \terminal{unknown}.
 The requirement for proofs and counterexamples is so that
 they can be checked by generating verification conditions in SMT-LIB.
 
+\subsection{Safety}
+
 For safety properties, a proof is given by safety annotations (G)
 for all recursive procedures, loops, as well as some labels so that each cycle is broken.
-
-For safety, a counterexample is given by a model for the SMT-LIB
-definitions as well as a concrete execution trace
-that initializes global variables, denotes the parameters
+We describe the interaction from the point of the client of the verifier,
+where $\RES$ is a response of the verifier
+and $\QRY$ is a follow-up query from the client.
+\begin{align*}
+\QRY~ & \LP \terminal{verify-call}~
+            \nonterminal{symbol}~
+            \LP \nonterminal{term}\rstar \RP
+        \RP \notag \\
+\RES~ & \terminal{correct} \\[4pt]
+\QRY~ & \LP \terminal{get-proof} \RP \\
+\RES~ & \LP \terminal{annotate-tag}~
+           \nonterminal{symbol}~
+           \nonterminal{attribute}\rplus
+                 \RP \rstar
+\end{align*}
+A counterexample to safety (G) is given by a model for the SMT-LIB
+definitions as well as a concrete execution trace:
+\begin{align*}
+\QRY~ & \LP \terminal{verify-call}~
+            \nonterminal{symbol}~
+            \LP \nonterminal{term}\rstar \RP
+        \RP \notag \\
+\RES~ & \terminal{incorrect} \\[4pt]
+\QRY~ & \LP \terminal{get-counterexample} \RP \\
+\RES~ & \LP \terminal{model}~  \nonterminal{model} \RP \\
+\RES~ & \LP \terminal{select-trace}~  \nonterminal{trace} \RP
+\end{align*}
+The trace initializes global variables, denotes the parameters
 of the call to the entry procedure,
 and proceeds to resolve nondeterminism in the initialization of local variables,
 havoc statements, and choices.
 \begin{align*}
-& \LP \terminal{model}~  \nonterminal{model} \RP\ropt \\
-& \LP \terminal{global}~ \nonterminal{symbol}~\nonterminal{value} \RP\rstar \\
-& \LP \terminal{call}~   \nonterminal{symbol}~\nonterminal{value}\rstar \RP \\
-& \LP \terminal{local}~  \nonterminal{value}\rstar \RP \\
-& \LP \terminal{havoc}~  \nonterminal{value}\rstar \RP \\
-& \LP \terminal{choice}~  k \RP \\
-& \LP \terminal{if}~     \nonterminal{value} \RP\ropt \\
-& \LP \terminal{while}~  \nonterminal{value} \RP\ropt \\
+\nonterminal{trace}
+    & \Coloneqq
+            \LP \terminal{global}~ \nonterminal{symbol}~\nonterminal{value} \RP\rstar \\
+    & \altspace \LP \terminal{call}~   \nonterminal{symbol}~\nonterminal{value}\rstar \RP \\
+    & \altspace     \nonterminal{step}\rstar \\
+    & \altspace \LP \terminal{incorrect-tag}~\nonterminal{symbol}~
+                        \nonterminal{attribute}\rplus \RP \\[4pt]
+\nonterminal{step}
+    & \Coloneqq \LP \terminal{local}~  \LP \nonterminal{value}\rstar \RP \RP \\
+    & \alt      \LP \terminal{havoc}~  \LP \nonterminal{value}\rstar \RP \RP \\
+    & \alt      \LP \terminal{choice}~  k \RP \RP\rstar
 \end{align*}
-Note, given a model, we can resolve the latter two branchings by \emph{concrete} execution.
+The trace ends with an indication which property exactly was violated,
+where the symbol coincides with some tag representing
+the annotation that is incorrect and the attributes
+are a subset of those that are attached to that tag.
+
+\subsection{Liveness}
+
+For liveness, a proof is based on well-founded orders,
+possibly here decreases clauses (to be clarified).
+Liveness proofs use exactly the same format as safety proofs,
+albeit their validation of course takes live and non-live locations into account
+(see below).
+
+A counterexample is a lasso,
+which has a concrete trace as a stem, just as for counterexamples to safety,
+that navigates to the head of a loop.
+The \terminal{incorrect-tag} at the end of the trace
+identifies the head of the head of a loop that has some infinite path,
+which is encoded by a recurrent set via the \terminal{:invariant} tag,
+but the validator is using underapproximation.
+\begin{align*}
+\QRY~ & \LP \terminal{verify-call}~
+            \nonterminal{symbol}~
+            \LP \nonterminal{term}\rstar \RP
+        \RP \notag \\
+\RES~ & \terminal{incorrect} \\[4pt]
+\QRY~ & \LP \terminal{get-counterexample} \RP \\
+\RES~ & \LP \terminal{model}~  \nonterminal{model} \RP \\
+\RES~ & \LP \terminal{select-trace}~  \nonterminal{trace} \RP \\
+\RES~ & \LP \terminal{annotate-tag}~
+           \nonterminal{symbol}~
+           \nonterminal{attribute}\rplus
+                 \RP \rstar
+\end{align*}
+
+% For \terminal{choice}, we may also need to resolve it symbolically,
+% perhaps by providing a guard attached to each possible substatement,
+% which encodes the condition when that path should be taken.
+% 
+% Moreover, it seems very beneficial to include branching information,
+% so that a validator does not need to fully evaluate guard expressions,
+% which may be tricky if they contain non-executable stuff, such as quantifiers.
+
+\section{Validation}
+
+The main design goal of proof and counterexample formats is
+that they can be compiled together with the original program
+into an SMT-LIB file.
+
+Validation relies on both standard over-approximate reasoning
+as well as underapproximate reasoning that denotes the existence of a path.
+We use notation from Dynamic Logic to represent these as follows:
+\begin{align*}
+\nonterminal{formula}
+    & \Coloneqq \BOX{\nonterminal{statement}}{\nonterminal{property}} \\
+    & \alt      \DIA{\nonterminal{statement}}{\nonterminal{property}} \\
+    & \alt \dots \\[4pt]
+\nonterminal{property}
+    & \Coloneqq \LP \terminal{assert}~ \nonterminal{symbol}~ \phi \RP \\
+    & \alt      \LP \terminal{live}~ \nonterminal{symbol}\rplus \RP \\
+    & \alt      \LP \terminal{non-live}~ \nonterminal{symbol}\rplus \RP
+\end{align*}
+where the symbols in the properties point to tags
+and the semantics of modalities
+$\BOX{\alpha}{P}$ and
+$\DIA{\alpha}{P}$ are defined
+for statements~$\alpha$ and properties~$P$ as follows:
+\begin{align*}
+s \models \BOX{\alpha}{P}
+    & \iff
+        \forall\ \sigma.\ \sigma(0) = s \land \sigma \models \alpha
+                \implies \sigma \models P \\[4pt]
+s \models \DIA{\alpha}{P}
+    & \iff
+        \exists\ \sigma.\ \sigma(0) = s \land \sigma \models \alpha
+                \land \sigma \models P
+\end{align*}
+so that these two modalities are dual to each other.
+
+To make this work, we assume the semantics of finite execution of statements
+is extended with a stuttering loop that is implicitly annotated by
+\terminal{:tag} \code{exit}.
+This ensures that all executions are in fact infinite.
+    \todo{document this!}
+
+Modality $\BOX{\alpha}{P}$ resembles Dijkstra's weakest liberal precondition.
+As a predicate transformer, it unfolds the program as follows:
+    \todo{add unfolding of safety and liveness conditions in atomic commands}
+\begin{align*}
+\BOX{\LP \terminal{sequence}~ \alpha_1, \dots, \alpha_n \RP}{P}
+    &\quad \equiv \quad
+         \BOX{\alpha_1}{} \cdots {\BOX{\alpha_n}{P}}
+    \\
+\BOX{\LP \terminal{assume}~\phi \RP}{P}
+    &\quad \equiv \quad
+         \phi \implies P
+    \\
+\BOX{\LP \terminal{assign}~\LP \LP x_1~e_1 \RP \dots \LP x_n~e_n \RP \RP}{P}
+    &\quad \equiv \quad
+         \forall\ x'_1 = e_1, \dots, x'_n = e_n.\ P'
+    \\
+\BOX{\LP \terminal{call}~ \rho~ \LP e_1 \dots e_n \RP~
+                               \LP x_1 \dots x_m \RP \RP}{P}
+    &\quad \equiv \quad
+        \text{(apply contract of $\rho$)}
+    \\
+\BOX{\LP \terminal{if}~\phi~\alpha~\beta \RP}{P}
+    &\quad \equiv \quad
+        \LP \terminal{ite}~\phi~
+                \BOX{\alpha}{P}~
+                \BOX{\beta}{P} \RP
+    \\
+\BOX{\LP \terminal{while}~\phi~\alpha~\beta \RP}{P}
+    &\quad \equiv \quad
+        \text{(summarize loop)}
+    \\
+\BOX{\LP \terminal{havoc}~\LP x_1 \dots x_n \RP \RP}{P}
+    &\quad \equiv \quad
+         \forall\ x'_1, \dots, x'_n.\ P'
+    \\
+\BOX{\LP \terminal{choice}~\LP \alpha_1 \dots \alpha_n \RP \RP}{P}
+    &\quad \equiv \quad
+         \BOX{\alpha_1}{P} \land \dots \land \BOX{\alpha_n}{P}
+\end{align*}
+Modality $\BOX{\alpha}{P}$ is dual:
+\begin{align*}
+\DIA{\LP \terminal{sequence}~ \alpha_1, \dots, \alpha_n \RP}{P}
+    &\quad \equiv \quad
+         \DIA{\alpha_1}{} \cdots {\DIA{\alpha_n}{P}}
+    \\
+\DIA{\LP \terminal{assume}~\phi \RP}{P}
+    &\quad \equiv \quad
+         \phi \land P
+    \\
+\DIA{\LP \terminal{assign}~\LP \LP x_1~e_1 \RP \dots \LP x_n~e_n \RP \RP}{P}
+    &\quad \equiv \quad
+         \exists\ x'_1 = e_1, \dots, x'_n = e_n.\ P'
+    \\
+\DIA{\LP \terminal{call}~ \rho~ \LP e_1 \dots e_n \RP~
+                               \LP x_1 \dots x_m \RP \RP}{P}
+    &\quad \equiv \quad
+        \text{(apply contract of $\rho$)}
+    \\
+\DIA{\LP \terminal{if}~\phi~\alpha~\beta \RP}{P}
+    &\quad \equiv \quad
+        \LP \terminal{ite}~\phi~
+                \DIA{\alpha}{P}~
+                \DIA{\beta}{P} \RP
+    \\
+\DIA{\LP \terminal{while}~\phi~\alpha~\beta \RP}{P}
+    &\quad \equiv \quad
+        \text{(summarize loop)}
+    \\
+\DIA{\LP \terminal{havoc}~\LP x_1 \dots x_n \RP \RP}{P}
+    &\quad \equiv \quad
+         \exists\ x'_1, \dots, x'_n.\ P'
+    \\
+\DIA{\LP \terminal{choice}~\LP \alpha_1 \dots \alpha_n \RP \RP}{P}
+    &\quad \equiv \quad
+         \DIA{\alpha_1}{P} \lor \dots \lor \DIA{\alpha_n}{P}
+\end{align*}
+
+\section{Outtakes / Design Alternatives}
+
+Whether to include branching information in counterexample traces:
+Given a model, we can resolve the latter two branchings by \emph{concrete} execution.
 However, if the branchings are included, the counterexample trace
 can be followed syntactically, in which case we can also validate the counterexample
 by \emph{concolic} execution, so that the SMT solver does not necessarily need to rely on the given model at all but will reconstruct (some) that makes the trace feasible.
 However, one of the two is strictly required.
-
-Question: do we want the trace to end with some concrete indication which property was violated? For example an assert with multiple conjuncts, or a procedure with multiple postconditions?
-
-For liveness, a proof is based on well-founded orders,
-possibly here decreases clauses (to be clarified).
-
-A counterexample is a lasso,
-which has a concrete trace as a stem (see above).
-From the entry point of the lasso,
-we require a \emph{symbolic} guidance that witnesses some path
-back to the entry point.
-It consists of a recurrent set, annotated as an invariant,
-to each loop head, including the entry point of the lasso.
-All other loop heads encountered must in addition be annotated
-by a decreases clause, to guarantee that the path is terminating.
-On the way, havocs should be annotated with terms
-(which include a choice function).
-
-For \terminal{choice}, we may also need to resolve it symbolically,
-perhaps by providing a guard attached to each possible substatement,
-which encodes the condition when that path should be taken.
-
-Moreover, it seems very beneficial to include branching information,
-so that a validator does not need to fully evaluate guard expressions,
-which may be tricky if they contain non-executable stuff, such as quantifiers.
-
-\section{Semantics}
-
-The execution of statements is described relative to
-a \emph{procedure environment}~$\pi$,
-which maps procedure names to their respective definitions,
-and a \emph{label environment}~$\lambda$,
-which maps label names to a statement that reflects
-the sequential program that remains to be executed
-whenever the label is reached.
-Alternatively, we can desciribe the unstructured program
-by translating the main body statement into a control flow automaton.
-    \todo{decide which, possibly prove their equivalence}
-
-The label environment is constructucted as follows
 \begin{align*}
-\lambda(\ell,\LP \terminal{label}~ \ell \RP; s_2,\dots; s_n)
-    &= s_2,\dots,s_n \\
-\lambda(\ell,\LP \terminal{sequence}~ s'_1; \dots; s'_m \RP; s_2,\dots; s_n)
-    &= \lambda(\ell, s'_1; \dots; s'_m; s_2,\dots; s_n) \\
-\lambda(\ell,\LP \terminal{if}~e~s_1~s'_1 \RP; s_2,\dots; s_n)
-    &= \begin{cases}
-       \lambda(\ell, s_1; s_2,\dots; s_n) & \text{if } \ell \in s_1 \\
-       \lambda(\ell, s_1; s_2,\dots; s_n) & \text{if } \ell \in s'_1 \\
-       \lambda(\ell, s_2,\dots; s_n) & \text{otherwise}
-       \end{cases} \\
-\lambda(\ell,s_1; s_2,\dots; s_n)
-    &= \lambda(\ell, s_2,\dots; s_n) \\
+& \LP \terminal{if}~     \nonterminal{value} \RP\ropt \\
+& \LP \terminal{while}~  \nonterminal{value} \RP\ropt \\
 \end{align*}
-
-We describe the semantics of the language in two ways
-    \todo{only works for the structured part!!}
-\begin{itemize}
-\item A simple relational semantics, in which $\sem{\nonterminal{statement}}(\sigma,\hat\sigma')$ characterizes state transitions from ordinary initial states~$\sigma$
-to possible successor states~$\hat\sigma' = (\nonterminal{mode} \colon \sigma')$ which in 
-$\nonterminal{mode} \Coloneqq \terminal{ok} \mid \terminal{brk} \mid \terminal{cont} \mid \terminal{ret} \mid \dots$
-encodes varying control flow modes that include early loop exits etc.
-The relational semantics is adequate to describe safety properties (G)
-of sequential programs in the language.
-\item To deal with liveness (F) and, in the future, concurrency (C),
-we define a small-step semantics with steps $\kappa \xlongrightarrow{\nonterminal{event}} \hat\kappa'$,
-in which $\nonterminal{event}$ is an event that describes the transition.
-Notably, atomic statements, like \terminal{assume} and \terminal{assign}
-will have corresponding events attached.
-Here, configurations $\kappa \Coloneqq (\nonterminal{statement},\sigma)$
-and $\kappa' \Coloneqq (\nonterminal{statement},\nonterminal{mode},\sigma)$
-track some statement that is to be executed.
-\end{itemize}
-
-\section{Tooling}
 
 \end{document}
